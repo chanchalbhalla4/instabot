@@ -4,6 +4,9 @@ import requests
 #import url library
 import urllib
 
+from textblob import TextBlob
+from textblob.sentiments import NaiveBayesAnalyzer
+
 #Import termcolor library
 from termcolor import colored
 
@@ -129,7 +132,6 @@ def get_post_id(insta_username):
             return user_media['data'][0]['id']
         else:
             print 'There is no recent post of the user!'
-            exit()
     else:
         print 'Status code other than 200 received!'
         exit()
@@ -159,6 +161,70 @@ def get_like_list(insta_username):            # Defining the Function ..........
         print colored('Status code other than 200 recieved', 'red')
 
 
+
+def like_a_post(insta_username):
+    media_id = get_post_id(insta_username)
+    request_url = (BASE_URL + 'media/%s/likes') % (media_id)
+    payload = {"access_token": APP_ACCESS_TOKEN}
+    print 'POST request url : %s' % (request_url)
+    post_a_like = requests.post(request_url, payload).json()
+    if post_a_like['meta']['code'] == 200:
+        print colored('Like was successful!','green')
+    else:
+        print colored('Your like was unsuccessful. Try again!','red')
+
+
+
+def post_a_comment(insta_username):
+    media_id = get_post_id(insta_username)
+    comment_text = raw_input("Your comment: ")
+    payload = {"access_token": APP_ACCESS_TOKEN, "text" : comment_text}
+    request_url = (BASE_URL + 'media/%s/comments') % (media_id)
+    print 'POST request url : %s' % (request_url)
+
+    make_comment = requests.post(request_url, payload).json()
+
+    if make_comment['meta']['code'] == 200:
+        print "Successfully added a new comment!"
+    else:
+        print "Unable to add comment. Try again!"
+
+
+
+def delete_negative_comment(insta_username):
+    media_id = get_post_id(insta_username)
+    request_url = (BASE_URL + 'media/%s/comments/?access_token=%s') % (media_id, APP_ACCESS_TOKEN)
+    print 'GET request url : %s' % (request_url)
+    comment_info = requests.get(request_url).json()
+
+    if comment_info['meta']['code'] == 200:
+        if len(comment_info['data']):
+            #Here's a naive implementation of how to delete the negative comments :)
+            for x in range(0, len(comment_info['data'])):
+                comment_id = comment_info['data'][x]['id']
+                comment_text = comment_info['data'][x]['text']
+                blob = TextBlob(comment_text, analyzer=NaiveBayesAnalyzer())
+                if (blob.sentiment.p_neg > blob.sentiment.p_pos):
+                    print 'Negative comment : %s' % (comment_text)
+                    delete_url = (BASE_URL + 'media/%s/comments/%s/?access_token=%s') % (media_id, comment_id, APP_ACCESS_TOKEN)
+                    print 'DELETE request url : %s' % (delete_url)
+                    delete_info = requests.delete(delete_url).json()
+
+                    if delete_info['meta']['code'] == 200:
+                        print 'Comment successfully deleted!\n'
+                    else:
+                        print 'Unable to delete comment!'
+                else:
+                    print 'Positive comment : %s\n' % (comment_text)
+        else:
+            print 'There are no existing comments on the post!'
+    else:
+        print 'Status code other than 200 received!'
+
+
+
+
+
 def start_bot():
     while True:
         print '\n'
@@ -169,7 +235,10 @@ def start_bot():
         print colored("3.) Get your own recent post.",'yellow')
         print colored("4.) Get the recent post of a user by username.",'yellow')
         print colored("5.) Get a list of people who have liked the recent post of a user", 'yellow')
-        print colored("6.) Exit", 'yellow')
+        print colored("6.) Like the recent post of a User", 'yellow')
+        print colored("7.) Make a comment on the recent post of a user", 'yellow')
+        print colored("8.) Delete negative comments from the recent post of a user", 'yellow')
+        print colored("9.) Exit", 'yellow')
 
         choice=raw_input(colored("Enter choice: ",'blue'))
         if choice=="1":
@@ -186,6 +255,15 @@ def start_bot():
             insta_username = raw_input("Enter the username of the user: ")
             get_like_list(insta_username)
         elif choice=="6":
+            insta_username = raw_input("Enter the username of the user: ")
+            like_a_post(insta_username)
+        elif choice =="7":
+            insta_username = raw_input("Enter the username of the user: ")
+            post_a_comment(insta_username)
+        elif choice=="8":
+            insta_username = raw_input("Enter the username of the user: ")
+            delete_negative_comment(insta_username)
+        elif choice=="9":
             exit()
         else:
             print colored("You have entered a wrong choice", 'red')  #selected choice is wrong
