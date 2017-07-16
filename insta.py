@@ -1,37 +1,50 @@
-#import requests library
 import requests
 
-#import url library
 import urllib
 
 from textblob import TextBlob
+
+import matplotlib.pyplot as plt
+
+from wordcloud import WordCloud,STOPWORDS
+
 from textblob.sentiments import NaiveBayesAnalyzer
 
-#Import termcolor library
 from termcolor import colored
 
 APP_ACCESS_TOKEN = '2291772577.56784ea.bcb8eebedb9d4c998cfcdba93967e8fe'
-#Token Owner : chanchalbhalla4
-#Sandbox Users : friends usernames
+
+
+tags = []
 
 BASE_URL = 'https://api.instagram.com/v1/'
 
-#Function for getting own info
-
 def self_info():
+
     request_url = (BASE_URL + 'users/self/?access_token=%s') % (APP_ACCESS_TOKEN)
+
     print 'GET request url : %s' % (request_url)
+
     user_info = requests.get(request_url).json()
 
     if user_info['meta']['code'] == 200:
+
         if len(user_info['data']):
+
             print 'Username: %s' % (user_info['data']['username'])
-            print 'No. of followers: %s' % (user_info['data']['counts']['followed_by'])
-            print 'No. of people you are following: %s' % (user_info['data']['counts']['follows'])
-            print 'No. of posts: %s' % (user_info['data']['counts']['media'])
+
+            print 'Number of followers: %s' % (user_info['data']['counts']['followed_by'])
+
+            print 'Number of people you are following: %s' % (user_info['data']['counts']['follows'])
+
+            print 'Number of posts: %s' % (user_info['data']['counts']['media'])
+
         else:
+
             print colored('User does not exist!','red')
+
     else:
+
         print colored('Error due to Status code other than 200 received!','red')
 
 
@@ -39,21 +52,27 @@ def self_info():
 
 
 def get_user_id(insta_username):
+
     request_url = (BASE_URL + 'users/search?q=%s&access_token=%s') % (insta_username, APP_ACCESS_TOKEN)
+
     print 'GET request url : %s' % (request_url)
+
     user_info = requests.get(request_url).json()
 
     if user_info['meta']['code'] == 200:
+
         if len(user_info['data']):
+
             return user_info['data'][0]['id']
         else:
+
             return None
     else:
         print 'Status code other than 200 received!'
         exit()
 
 '''
-Function declaration to get the info of a user by username
+Function declaration to get the information of a user by username
 '''
 
 def get_user_info(insta_username):
@@ -68,16 +87,19 @@ def get_user_info(insta_username):
     if user_info['meta']['code'] == 200:
         if len(user_info['data']):
             print 'Username: %s' % (user_info['data']['username'])
-            print 'No. of followers: %s' % (user_info['data']['counts']['followed_by'])
-            print 'No. of people you are following: %s' % (user_info['data']['counts']['follows'])
-            print 'No. of posts: %s' % (user_info['data']['counts']['media'])
+            print 'Number of followers: %s' % (user_info['data']['counts']['followed_by'])
+            print 'Number of people you are following: %s' % (user_info['data']['counts']['follows'])
+            print 'Number of posts: %s' % (user_info['data']['counts']['media'])
         else:
             print colored('---There is no data for this user!---', 'red')
     else:
         print colored('---Status code other than 200 received!---', 'red') #error in code
 
 
-#Function declaration to get your recent post
+'''
+Function declaration to get your recent post
+'''
+
 def get_own_post():
     request_url = (BASE_URL + 'users/self/media/recent/?access_token=%s') % (APP_ACCESS_TOKEN)
     print 'GET request url : %s' % (request_url)
@@ -95,7 +117,11 @@ def get_own_post():
         print colored('Status code other than 200 received!','red')
 
 
-#Function declaration to get the recent post of a user by username
+'''
+Function declaration to get the recent post of a user by username
+'''
+
+
 def get_user_post(insta_username):
     user_id = get_user_id(insta_username)
     if user_id == None:
@@ -117,6 +143,9 @@ def get_user_post(insta_username):
         print colored('Status code other than 200 received!','red')
 
 
+'''
+Function declaration to get post id
+'''
 
 def get_post_id(insta_username):
     user_id = get_user_id(insta_username)
@@ -131,22 +160,34 @@ def get_post_id(insta_username):
         if len(user_media['data']):
             return user_media['data'][0]['id']
         else:
-            print 'There is no recent post of the user!'
+            print colored('There is no recent post of the user!','red')
     else:
-        print 'Status code other than 200 received!'
+        print colored('Status code other than 200 received!','red')
         exit()
 
+'''
+Function declaration to get list of users had liked  post
+'''
 
 
+def get_like_list(insta_username):
 
-def get_like_list(insta_username):            # Defining the Function ............
-    media_id = get_post_id(insta_username)  # Getting post id by passing the username .......
+    #Getting Post-id by using the username
+
+    media_id = get_post_id(insta_username)
+
     request_url = BASE_URL + 'media/%s/likes?access_token=%s' % (media_id, APP_ACCESS_TOKEN)
+
     print colored('GET request url : %s', 'blue') % (request_url)
+
     like_list = requests.get(request_url).json()
 
-    if like_list['meta']['code'] == 200:  # checking the status code .....
+    if like_list['meta']['code'] == 200:
+
+        #checking status code
+
         if len(like_list['data']):
+
             position = 1
             print colored("List of people who Liked Your Recent post", 'blue')
             for users in like_list['data']:
@@ -154,7 +195,7 @@ def get_like_list(insta_username):            # Defining the Function ..........
                     print position, colored(users['username'],'green')
                     position = position + 1
                 else:
-                    print colored('No one had d Your post!', 'red')
+                    print colored('No one had liked Your post!', 'red')
         else:
             print colored("User Does not have any post",'red')
     else:
@@ -163,21 +204,30 @@ def get_like_list(insta_username):            # Defining the Function ..........
 
 
 def like_a_post(insta_username):
+
     media_id = get_post_id(insta_username)
+
     request_url = (BASE_URL + 'media/%s/likes') % (media_id)
+
     payload = {"access_token": APP_ACCESS_TOKEN}
+
     print 'POST request url : %s' % (request_url)
+
     post_a_like = requests.post(request_url, payload).json()
+
     if post_a_like['meta']['code'] == 200:
+
         print colored('Like was successful!','green')
+
     else:
+
         print colored('Your like was unsuccessful. Try again!','red')
 
 
 
 def post_a_comment(insta_username):
     media_id = get_post_id(insta_username)
-    comment_text = raw_input("Your comment: ")
+    comment_text = raw_input(colored("Your comment: ",'blue'))
     payload = {"access_token": APP_ACCESS_TOKEN, "text" : comment_text}
     request_url = (BASE_URL + 'media/%s/comments') % (media_id)
     print 'POST request url : %s' % (request_url)
@@ -185,9 +235,9 @@ def post_a_comment(insta_username):
     make_comment = requests.post(request_url, payload).json()
 
     if make_comment['meta']['code'] == 200:
-        print "Successfully added a new comment!"
+        print colored("New comment is Successfully added!",'green')
     else:
-        print "Unable to add comment. Try again!"
+        print colored("Unable to Add comment. Try again!",'red')
 
 
 
@@ -199,7 +249,8 @@ def delete_negative_comment(insta_username):
 
     if comment_info['meta']['code'] == 200:
         if len(comment_info['data']):
-            #Here's a naive implementation of how to delete the negative comments :)
+
+            #Navie implementation to delete the negative comments
             for x in range(0, len(comment_info['data'])):
                 comment_id = comment_info['data'][x]['id']
                 comment_text = comment_info['data'][x]['text']
@@ -211,61 +262,130 @@ def delete_negative_comment(insta_username):
                     delete_info = requests.delete(delete_url).json()
 
                     if delete_info['meta']['code'] == 200:
-                        print 'Comment successfully deleted!\n'
+                        print colored('Comment successfully deleted!','green')
                     else:
-                        print 'Unable to delete comment!'
+                        print colored('Unable to delete comment!','red')
                 else:
                     print 'Positive comment : %s\n' % (comment_text)
         else:
-            print 'There are no existing comments on the post!'
+            print colored('There are no existing comments on the post!','red')
     else:
-        print 'Status code other than 200 received!'
+        print colored('Status code other than 200 received!','red')
 
+
+
+def get_caption(insta_username):
+    user_id = get_user_id(insta_username)
+    if user_id == None:
+        print
+        'User does not exist!'
+        exit()
+    request_url = (BASE_URL + 'users/%s/media/recent/?access_token=%s') % (user_id, APP_ACCESS_TOKEN)
+    print
+    'GET request url : %s' % (request_url)
+    user_media = requests.get(request_url).json()
+    if user_media['meta']['code'] == 200:
+        if len(user_media['data']):
+            for i in user_media['data']:
+                tags.append(i['tags'])
+            matplot()
+        else:
+            print 'no media'
+    else:
+        print 'status code other than 200'
+
+
+def matplot():
+    l=[]
+    for i in tags:
+        l.append((" ").join(i))
+    words = (" ").join(l)
+    wordcloud = WordCloud(stopwords=STOPWORDS,background_color='white',width=1800,height=1400).generate(words)
+    plt.imshow(wordcloud)
+    plt.axis('off')
+    plt.show()
 
 
 
 
 def start_bot():
+
     while True:
+
         print '\n'
+
         print colored('Hello! Welcome to Insabot','blue')
+
         print colored('Menu:','blue')
+
         print colored("1.) Get your own details.",'yellow')
-        print colored("2.) Get details of a user by username.", 'yellow')
-        print colored("3.) Get your own recent post.",'yellow')
+
+        print colored("2.) Get your own recent post.",'yellow')
+
+        print colored("3.) Get details of a user by username.", 'yellow')
+
         print colored("4.) Get the recent post of a user by username.",'yellow')
+
         print colored("5.) Get a list of people who have liked the recent post of a user", 'yellow')
+
         print colored("6.) Like the recent post of a User", 'yellow')
+
         print colored("7.) Make a comment on the recent post of a user", 'yellow')
+
         print colored("8.) Delete negative comments from the recent post of a user", 'yellow')
-        print colored("9.) Exit", 'yellow')
+
+        print colored("9.) Analys your recent posts",'yellow')
+
+        print colored("10.) Exit", 'yellow')
 
         choice=raw_input(colored("Enter choice: ",'blue'))
+
         if choice=="1":
+
             self_info()
+
         elif choice=="2":
-            insta_username = raw_input(colored("Enter Username of the user: ", 'green'))
-            get_user_info(insta_username)
-        elif choice == "3":
+
             get_own_post()
+
+        elif choice == "3":
+
+            insta_username = raw_input(colored("Enter Username of the User: ", 'green'))
+            get_user_info(insta_username)
+
         elif choice == "4":
-            insta_username = raw_input(colored("Enter the username of the user: ",'green'))
+
+            insta_username = raw_input(colored("Enter Username of the User: ",'green'))
             get_user_post(insta_username)
+
         elif choice=="5":
-            insta_username = raw_input("Enter the username of the user: ")
+
+            insta_username = raw_input(colored("Enter Username of the user: ",'green'))
             get_like_list(insta_username)
+
         elif choice=="6":
-            insta_username = raw_input("Enter the username of the user: ")
+
+            insta_username = raw_input(colored("Enter Username of the user: ",'green'))
             like_a_post(insta_username)
+
         elif choice =="7":
-            insta_username = raw_input("Enter the username of the user: ")
+
+            insta_username =raw_input(colored("Enter Username of the user: ",'green'))
             post_a_comment(insta_username)
+
         elif choice=="8":
-            insta_username = raw_input("Enter the username of the user: ")
+
+            insta_username = raw_input(colored("Enter Username of the user: ",'green'))
             delete_negative_comment(insta_username)
+
         elif choice=="9":
+            insta_username = raw_input(colored("Enter Username of the user: ", 'green'))
+            get_caption(insta_username)
+
+        elif choice=="10":
+
             exit()
         else:
-            print colored("You have entered a wrong choice", 'red')  #selected choice is wrong
+            print colored("You have entered a wrong choice", 'red')
 
 start_bot()
