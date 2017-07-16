@@ -1,6 +1,5 @@
 #importing libraries
 
-import info
 
 import requests
 
@@ -83,7 +82,7 @@ def get_user_id(insta_username):
 
             return None
     else:
-        print 'Status code other than 200 received!'
+        print colored('Status code other than 200 received!','red')
 
         exit()
 
@@ -122,7 +121,7 @@ def get_user_info(insta_username):
             print 'Number of posts: %s' % (user_info['data']['counts']['media'])
 
         else:
-            print colored('---There is no data for this user!---', 'red')
+            print colored('There is no data for this user!', 'red')
 
     else:
         #Error in code
@@ -429,10 +428,15 @@ def matplot():
     for i in tags:
 
         l.append((" ").join(i))
+
     words = (" ").join(l)
+
     wordcloud = WordCloud(stopwords=STOPWORDS,background_color='white',width=1800,height=1400).generate(words)
+
     plt.imshow(wordcloud)
+
     plt.axis('off')
+
     plt.show()
 
 
